@@ -10,17 +10,20 @@ namespace newHSBGcheck
 {
     internal class SQLRequest
     {
+        static NpgsqlConnection nc;
+        internal static void ConnectToDB()
+        {
+            string connect = $@"sqlServer";
+            nc = new NpgsqlConnection(connect);
+            nc.Open();
+        }
         internal static DataTable PostgreSQL(string sqlQuery)
         {
             try
             {
-                string connect = $@"sqlConnectData";
-                NpgsqlConnection nc = new NpgsqlConnection(connect);
-                nc.Open();
                 NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(sqlQuery, nc);
                 DataTable dt = new DataTable();
                 adapter.Fill(dt);
-                nc.Close();
                 return dt;
             }
             catch (Exception ex)
@@ -28,6 +31,10 @@ namespace newHSBGcheck
                 Logs.Log(ex.Message);
                 return null;
             }
+        }
+        internal static void DisconnectDB()
+        {
+            nc.Close();
         }
     }
 }

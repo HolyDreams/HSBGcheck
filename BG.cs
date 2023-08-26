@@ -18,7 +18,7 @@ namespace newHSBGcheck
         /// Server - на каком сервере происходит проверка и его запись. 0 - EU, 1 - US;
         /// </summary>
         /// <param name="server"></param>
-        internal void Check(int server)
+        internal async void Check(int server)
         {
             if (server > 1 || server < 0)
                 return;
@@ -28,11 +28,18 @@ namespace newHSBGcheck
                 int page = 1;
                 Logs.Log(srv + " начал проверку.");
                 List<BGstruct> bgRankList = new List<BGstruct>();
+
                 while (bgRankList.Count < 250)
                 {
-                    int seasonID = 9;
-                    var json = new WebClient().DownloadString($"https://hearthstone.blizzard.com/en-us/api/community/leaderboardsData?region={srv.ToUpper()}&leaderboardId=battlegrounds&seasonId=9&page={page}");
+                    int seasonID = 10;
+
+                    var linkText = $"https://hearthstone.blizzard.com/en-us/api/community/leaderboardsData?region={srv.ToUpper()}&leaderboardId=battlegrounds&seasonId={seasonID}&page={page}";
+                    var client = new HttpClient();
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla Failfox 5.6");
+                    var json = await client.GetStringAsync(linkText);
                     var Rows = JObject.Parse(json)["leaderboard"]["rows"];
+                    if (Rows.Count() == 0)
+                        break;
                     foreach (var item in Rows)
                     {
                         var text = item.ToString();
@@ -51,6 +58,8 @@ namespace newHSBGcheck
                     }
                     page++;
                 }
+                var qq = bgRankList.Count().ToString();
+                var qw = bgRankList.GroupBy(a => a.accountid).Count().ToString();
                 sqlQuery = $@"SELECT *
                               FROM hsbg_{srv.ToLower()}";
                 var res = SQLRequest.PostgreSQL(sqlQuery);
